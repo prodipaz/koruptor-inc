@@ -51,22 +51,30 @@ const formatRp = (n) => {
 const db = {
   async upsertPlayer(data) {
     try {
-      const r = await fetch(SUPABASE_URL + "/rest/v1/players", {
+      const payload = {
+        player_id: data.player_id,
+        name: data.name,
+        province: data.province,
+        total_korupsi: Math.floor(Number(data.total_korupsi)) || 0,
+        prestige_count: data.prestige_count || 0,
+        updated_at: data.updated_at
+      };
+      console.log("Sending to Supabase:", payload);
+      const r = await fetch(SUPABASE_URL + "/rest/v1/players?on_conflict=player_id", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-          "Prefer": "resolution=merge-duplicates"
+          "Prefer": "resolution=merge-duplicates,return=minimal"
         },
-        body: JSON.stringify({
-          ...data,
-          total_korupsi: Math.floor(Number(data.total_korupsi)) || 0
-        })
+        body: JSON.stringify(payload)
       });
       if (!r.ok) {
         const err = await r.text();
-        console.error("upsertPlayer error:", err);
+        console.error("upsertPlayer error:", r.status, err);
+      } else {
+        console.log("Upsert OK, status:", r.status);
       }
     } catch(e) { console.error("upsertPlayer exception:", e); }
   },
