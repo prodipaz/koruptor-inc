@@ -51,7 +51,7 @@ const formatRp = (n) => {
 const db = {
   async upsertPlayer(data) {
     try {
-      await fetch(SUPABASE_URL + "/rest/v1/players", {
+      const r = await fetch(SUPABASE_URL + "/rest/v1/players", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,9 +59,16 @@ const db = {
           "Authorization": "Bearer " + SUPABASE_ANON_KEY,
           "Prefer": "resolution=merge-duplicates"
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          total_korupsi: Math.floor(Number(data.total_korupsi)) || 0
+        })
       });
-    } catch(e) { console.error(e); }
+      if (!r.ok) {
+        const err = await r.text();
+        console.error("upsertPlayer error:", err);
+      }
+    } catch(e) { console.error("upsertPlayer exception:", e); }
   },
   async getLeaderboard() {
     try {
@@ -69,8 +76,15 @@ const db = {
         SUPABASE_URL + "/rest/v1/players?select=name,province,total_korupsi,prestige_count&order=total_korupsi.desc&limit=50",
         { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": "Bearer " + SUPABASE_ANON_KEY } }
       );
-      return r.ok ? await r.json() : [];
-    } catch { return []; }
+      if (!r.ok) return [];
+      const data = await r.json();
+      console.log("Leaderboard raw:", JSON.stringify(data[0]));
+      // Supabase returns bigint as string — cast explicitly
+      return data.map(p => ({
+        ...p,
+        total_korupsi: parseInt(p.total_korupsi, 10) || 0
+      }));
+    } catch(e) { console.error("LB error:", e); return []; }
   },
   async getDonations() {
     try {
@@ -243,15 +257,21 @@ export default function App() {
 
   useEffect(() => {
     if (!setupDone) return;
-    const sync = async () => {
+
+    const pushScore = async (currentTotal) => {
+      const totalToSend = Math.floor(Number(currentTotal) || 0);
+      console.log("Pushing score:", totalToSend);
       await db.upsertPlayer({
         player_id: playerId.current,
         name: playerName,
         province: province,
-        total_korupsi: Math.floor(totalRef.current),
+        total_korupsi: totalToSend,
         prestige_count: prestige,
         updated_at: new Date().toISOString()
       });
+    };
+
+    const fetchLB = async () => {
       const lb = await db.getLeaderboard();
       setLeaderboard(lb);
       const don = await db.getDonations();
@@ -265,10 +285,17 @@ export default function App() {
         showToast("Donasi baru dari " + latest.name + "! Terima kasih!");
       }
     };
-    sync();
-    const iv = setInterval(sync, 15000);
-    return () => clearInterval(iv);
-  }, [setupDone, playerName, province, prestige, addTicker, showToast]);
+
+    // Push score immediately with current value, then fetch leaderboard
+    pushScore(totalKorupsi).then(fetchLB);
+
+    // Push score every 30s using ref (always latest value)
+    const pushIv = setInterval(() => pushScore(totalRef.current), 30000);
+    // Fetch leaderboard every 15s
+    const fetchIv = setInterval(fetchLB, 15000);
+
+    return () => { clearInterval(pushIv); clearInterval(fetchIv); };
+  }, [setupDone, playerName, province, prestige, totalKorupsi, addTicker, showToast]);
 
   const triggerRaid = () => {
     const lp = launderPct;
