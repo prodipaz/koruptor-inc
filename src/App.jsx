@@ -14,14 +14,18 @@ const PROVINCES = [
   "Maluku","Maluku Utara","Papua Barat","Papua","Papua Selatan","Papua Tengah","Papua Pegunungan","Papua Barat Daya"
 ];
 
+// Semua nilai dalam satuan rupiah nyata (x1.000.000 dari versi lama)
+// Base click = Rp 1.000.000 per klik
+const M = 1_000_000; // 1 Juta
+
 const UPGRADES = [
-  { id:"staf",      name:"Staf Fiktif",       emoji:"👤", desc:"Auto klik +1/detik",      baseCost:100,    baseIncome:1,   maxLevel:50 },
-  { id:"proyek",    name:"Proyek Fiktif",      emoji:"📄", desc:"Klik power x1.5",         baseCost:500,    baseIncome:5,   maxLevel:30 },
-  { id:"pengacara", name:"Pengacara Handal",   emoji:"👨‍⚖️", desc:"KPK slowdown -10%",      baseCost:1000,   baseIncome:0,   maxLevel:10 },
-  { id:"rekening",  name:"Rekening Offshore",  emoji:"🏦", desc:"+20 passive/detik",       baseCost:5000,   baseIncome:20,  maxLevel:20 },
-  { id:"kolusi",    name:"Jaringan Kolusi",    emoji:"🤝", desc:"Klik bonus x3",           baseCost:10000,  baseIncome:50,  maxLevel:15 },
-  { id:"launder",   name:"Cuci Uang",          emoji:"🧺", desc:"Amankan 30% dari sitaan", baseCost:25000,  baseIncome:0,   maxLevel:5  },
-  { id:"pulau",     name:"Beli Pulau Pribadi", emoji:"🏝️", desc:"+200 passive/detik",      baseCost:100000, baseIncome:200, maxLevel:10 },
+  { id:"staf",      name:"Staf Fiktif",       emoji:"👤", desc:"Auto +1Jt/detik",          baseCost:100*M,    baseIncome:1*M,   maxLevel:50 },
+  { id:"proyek",    name:"Proyek Fiktif",      emoji:"📄", desc:"Klik power x1.5",          baseCost:500*M,    baseIncome:5*M,   maxLevel:30 },
+  { id:"pengacara", name:"Pengacara Handal",   emoji:"👨‍⚖️", desc:"KPK slowdown -10%",       baseCost:1000*M,   baseIncome:0,     maxLevel:10 },
+  { id:"rekening",  name:"Rekening Offshore",  emoji:"🏦", desc:"+20Jt passive/detik",      baseCost:5000*M,   baseIncome:20*M,  maxLevel:20 },
+  { id:"kolusi",    name:"Jaringan Kolusi",    emoji:"🤝", desc:"Klik bonus x3",            baseCost:10000*M,  baseIncome:50*M,  maxLevel:15 },
+  { id:"launder",   name:"Cuci Uang",          emoji:"🧺", desc:"Amankan 30% dari sitaan",  baseCost:25000*M,  baseIncome:0,     maxLevel:5  },
+  { id:"pulau",     name:"Beli Pulau Pribadi", emoji:"🏝️", desc:"+200Jt passive/detik",     baseCost:100000*M, baseIncome:200*M, maxLevel:10 },
 ];
 
 const EVENTS = [
@@ -94,7 +98,7 @@ export default function App() {
   const [kpcMeter,      setKpcMeter]      = useState(0);
   const [prestige,      setPrestige]      = useState(0);
   const [upgrades,      setUpgrades]      = useState({});
-  const [clickPower,    setClickPower]    = useState(1);
+  const [clickPower,    setClickPower]    = useState(1*M);
   const [passiveIncome, setPassiveIncome] = useState(0);
   const [kpcSlowdown,   setKpcSlowdown]   = useState(0);
   const [launderPct,    setLaunderPct]    = useState(0);
@@ -170,7 +174,7 @@ export default function App() {
   }, [money, totalKorupsi, kpcMeter, prestige, upgrades, playerName, province, setupDone]);
 
   useEffect(() => {
-    let cp = 1 + prestige * 0.5;
+    let cp = M * (1 + prestige * 0.5); // base Rp 1 Juta per klik
     let pi = 0, ks = 0, lp = 0;
     UPGRADES.forEach(u => {
       const lvl = upgrades[u.id] || 0;
@@ -301,7 +305,7 @@ export default function App() {
   };
 
   const suapKPK = () => {
-    const cost = Math.floor(3000 * Math.pow(1.4, Math.floor(kpcMeter / 10)));
+    const cost = Math.floor(3000*M * Math.pow(1.4, Math.floor(kpcMeter / 10)));
     if (moneyRef.current < cost) { showToast("Kurang uang untuk nyuap!"); return; }
     setMoney(m => m - cost);
     setKpcMeter(k => Math.max(0, k - 30));
@@ -485,7 +489,7 @@ export default function App() {
             <div style={{textAlign:"center",fontSize:"13px",color:"rgba(255,255,255,0.4)"}}>Klik untuk markup anggaran!</div>
 
             <button onClick={suapKPK} style={{padding:"11px 0",borderRadius:"14px",border:"1.5px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#f87171",fontSize:"13px",fontWeight:"700",cursor:"pointer",width:"100%",maxWidth:"320px",transition:"all 0.2s"}}>
-              SUAP KPK — {formatRp(Math.floor(3000 * Math.pow(1.4, Math.floor(kpcMeter / 10))))}
+              SUAP KPK — {formatRp(Math.floor(3000*M * Math.pow(1.4, Math.floor(kpcMeter / 10))))}
               <div style={{fontSize:"10px",fontWeight:"400",opacity:0.7}}>Turunkan KPK meter -30%</div>
             </button>
 
@@ -493,7 +497,7 @@ export default function App() {
               {[
                 ["💰","Total",formatRp(totalKorupsi)],
                 ["⭐","Prestige",prestige],
-                ["⚡","Klik",`x${clickPower.toLocaleString()}`],
+                ["⚡","Klik",formatRp(clickPower)],
                 ["💸","Passive",`+${formatRp(passiveIncome)}/s`],
                 ["🛡️","KPK Slow",`${kpcSlowdown}%`],
                 ["🧺","Aman",`${launderPct}%`],
