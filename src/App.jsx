@@ -39,12 +39,13 @@ const EVENTS = [
 ];
 
 const formatRp = (n) => {
-  if (n >= 1e15) return "Rp " + (n/1e15).toFixed(2) + " Kuadriliun";
-  if (n >= 1e12) return "Rp " + (n/1e12).toFixed(2) + "T";
-  if (n >= 1e9)  return "Rp " + (n/1e9).toFixed(2) + "M";
-  if (n >= 1e6)  return "Rp " + (n/1e6).toFixed(2) + "Jt";
-  if (n >= 1e3)  return "Rp " + (n/1e3).toFixed(1) + "K";
-  return "Rp " + Math.floor(n);
+  n = Math.floor(Number(n) || 0);
+  if (n >= 1e15) return "Rp " + Math.floor(n/1e15) + " Kuadriliun";
+  if (n >= 1e12) return "Rp " + Math.floor(n/1e12) + " Triliun";
+  if (n >= 1e9)  return "Rp " + Math.floor(n/1e9)  + " Miliar";
+  if (n >= 1e6)  return "Rp " + Math.floor(n/1e6)  + " Juta";
+  if (n >= 1e3)  return "Rp " + Math.floor(n/1e3)  + " Ribu";
+  return "Rp " + n;
 };
 
 const db = {
@@ -259,7 +260,7 @@ export default function App() {
       if (latest && latest.created_at !== lastDonTs.current) {
         lastDonTs.current = latest.created_at;
         localStorage.setItem("last_don_ts", latest.created_at);
-        const msg = "DONASI MASUK! " + latest.name + " nyumbang Rp" + Number(latest.amount).toLocaleString("id") + "! \"" + (latest.message || "Semangat korupsinya!") + "\"";
+        const msg = "DONASI MASUK! " + latest.name + " nyumbang " + formatRp(Number(latest.amount)) + "! \"" + (latest.message || "Semangat korupsinya!") + "\"";
         addTicker(msg);
         showToast("Donasi baru dari " + latest.name + "! Terima kasih!");
       }
@@ -439,7 +440,7 @@ export default function App() {
       <div style={{padding:"8px 14px",background:"rgba(0,0,0,0.25)",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"5px"}}>
           <span style={{color:"rgba(255,255,255,0.5)"}}>⚖️ KPK RADAR {kpcSlowdown > 0 ? "(slowdown " + kpcSlowdown + "%)" : ""}</span>
-          <span style={{color:kpcColor,fontWeight:"800"}}>{kpcMeter.toFixed(1)}% {kpcMeter > 80 ? "BAHAYA!" : kpcMeter > 50 ? "Waspada" : ""}</span>
+          <span style={{color:kpcColor,fontWeight:"800"}}>{Math.floor(kpcMeter)}% {kpcMeter > 80 ? "BAHAYA!" : kpcMeter > 50 ? "Waspada" : ""}</span>
         </div>
         <div style={{background:"rgba(255,255,255,0.08)",borderRadius:"999px",height:"10px",overflow:"hidden"}}>
           <div style={{width:kpcMeter+"%",height:"100%",background:"linear-gradient(90deg,#22c55e,"+kpcColor+")",borderRadius:"999px",transition:"width 0.5s,background 0.5s",boxShadow:"0 0 10px "+kpcColor}} />
@@ -582,7 +583,7 @@ export default function App() {
                       <div style={{fontWeight:"700",fontSize:"13px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                       <div style={{fontSize:"10px",color:"rgba(255,255,255,0.35)"}}>📍 {p.province}{p.prestige_count > 0 ? " — Prestige x" + p.prestige_count : ""}</div>
                     </div>
-                    <div style={{color:"#fbbf24",fontWeight:"900",fontSize:"13px",flexShrink:0}}>{formatRp(p.total_korupsi)}</div>
+                    <div style={{color:"#fbbf24",fontWeight:"900",fontSize:"13px",flexShrink:0}}>{formatRp(Number(p.total_korupsi))}</div>
                   </div>
                 ))}
               </>
@@ -615,7 +616,7 @@ export default function App() {
                     <div style={{fontWeight:"700",fontSize:"13px"}}>{d.name}</div>
                     {d.message && <div style={{fontSize:"10px",color:"rgba(255,255,255,0.35)",fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>"{d.message}"</div>}
                   </div>
-                  <div style={{color:"#fbbf24",fontWeight:"900",fontSize:"13px",flexShrink:0}}>Rp{Number(d.amount).toLocaleString("id")}</div>
+                  <div style={{color:"#fbbf24",fontWeight:"900",fontSize:"13px",flexShrink:0}}>{formatRp(Number(d.amount))}</div>
                 </div>
               ))
             )}
